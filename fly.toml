@@ -1,0 +1,32 @@
+app = 'evolution-api-thalyson'
+primary_region = 'gru'
+
+[build]
+  dockerfile = 'Dockerfile'
+
+[env]
+  SERVER_URL = 'https://evolution-api-thalyson.fly.dev'
+  SERVER_PORT = '8080'
+  DATABASE_PROVIDER = 'postgresql'
+  DATABASE_CONNECTION_CLIENT_NAME = 'evolution'
+  AUTHENTICATION_TYPE = 'apikey'
+  # Coloque a sua chave como um secret no fly.io usando:
+  # fly secrets set AUTHENTICATION_API_KEY="SUA_CHAVE_AQUI"
+  # fly secrets set DATABASE_CONNECTION_URI="postgresql://user:pass@host/evolution?schema=public"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
+
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1
+
+[[mounts]]
+  source = 'evolution_data'
+  destination = '/data'
