@@ -10,9 +10,11 @@ primary_region = 'gru'
   DATABASE_PROVIDER = 'postgresql'
   DATABASE_CONNECTION_CLIENT_NAME = 'evolution'
   AUTHENTICATION_TYPE = 'apikey'
+  CACHE_REDIS_ENABLED = 'false'
+  CONFIG_SESSION_PHONE_VERSION = '2.3000.1017502846'
   # Coloque a sua chave como um secret no fly.io usando:
   # fly secrets set AUTHENTICATION_API_KEY="SUA_CHAVE_AQUI"
-  # fly secrets set DATABASE_CONNECTION_URI="postgresql://user:pass@host/evolution?schema=public"
+  # fly secrets set DATABASE_URL="postgresql://user:pass@host/evolution?schema=public&sslmode=disable"
 
 [http_service]
   internal_port = 8080

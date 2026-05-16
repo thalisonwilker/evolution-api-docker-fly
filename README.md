@@ -56,10 +56,20 @@ fly secrets set DATABASE_CONNECTION_URI="postgresql://user:pass@host:5432/banco?
 ```
 
 ### Passo 5: Fazer o Deploy
-Execute:
+O comando abaixo enviará o `Dockerfile`, o `entrypoint.sh` e o `fly.toml` para o Fly.io para construir sua imagem:
 ```bash
-fly deploy
+fly deploy --ha=false
 ```
+> [!TIP]
+> O parâmetro `--ha=false` evita que o Fly tente criar duas máquinas simultaneamente, o que poderia causar erro de travamento no volume.
+
+---
+
+### 📱 Dica: Estabilidade do QR Code
+Caso tenha problemas para ler o QR Code ou ele não apareça:
+1. Verifique nos logs se a versão do WhatsApp Web emulada é compatível.
+2. Você pode ajustar essa versão no `fly.toml` através da variável `CONFIG_SESSION_PHONE_VERSION`.
+3. Se o erro persistir, apague a instância no Manager e crie uma nova para limpar resquícios de sessões anteriores no volume.
 
 ### Passo 6: Ajustar o Número de Máquinas (Scale)
 Como volumes do Fly não podem ser compartilhados entre máquinas, force a execução de apenas uma máquina:
@@ -69,16 +79,19 @@ fly scale count 1 -y
 
 ---
 
-## 🛠 Entendendo a Arquitetura
+## 🛠 Entendendo a Arquitetura e Soluções Aplicadas
 
-1. **Volume Centralizado (`/data`):**
-   A Evolution API por padrão espalha seus arquivos. No `Dockerfile`, criamos pastas dentro de `/data` e fazemos links simbólicos (symlinks) para `/evolution/instances`, `/evolution/store`, etc. Isso garante que todos os dados persistentes fiquem protegidos em um único volume.
+1. **Volume Centralizado e QR Code (`entrypoint.sh`):**
+   A Evolution API espalha dados por várias pastas. No Fly.io, volumes montados (como o `/data`) substituem o conteúdo da imagem. Para evitar o erro `ENOTDIR` (onde a API não consegue criar pastas em alvos de links simbólicos inexistentes), usamos o `entrypoint.sh` para:
+   - Criar a estrutura de pastas (`instances`, `store`, `logs`, `backups`) dentro do volume no momento do boot.
+   - Garantir as permissões de escrita para o processo da API.
+   - Isso permite que o QR Code seja gerado e as sessões sejam salvas permanentemente.
 
 2. **Correção de Conflito de `.env`:**
-   A imagem original da Evolution API contém um arquivo `.env` fixo que aponta para `postgres:5432`. O nosso `Dockerfile` limpa essas linhas automaticamente no build para que o Prisma respeite corretamente as variáveis injetadas via **Fly Secrets**.
+   A imagem original possui um `.env` hardcoded. Nosso `Dockerfile` limpa essas definições durante o build, forçando a API a usar exclusivamente os valores definidos via **Fly Secrets**.
 
-3. **Permissões de Root:**
-   As migrações do banco (Prisma) exigem permissões de escrita em diretórios específicos durante o boot. O container roda como `root` para garantir que a sincronização das tabelas ocorra sem erros de permissão.
+3. **Migrações e Permissões:**
+   O container inicia como `root` para permitir que o script de entrada prepare o volume e que o Prisma execute as migrações de banco de dados (`db:deploy`) com sucesso antes da aplicação subir.
 
 ---
 

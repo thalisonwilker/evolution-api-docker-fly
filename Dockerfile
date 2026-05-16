@@ -18,8 +18,8 @@ ENV TZ=America/Belem
 ENV SERVER_PORT=8080
 ENV DATABASE_PROVIDER=postgresql
 
-EXPOSE 8080
+COPY entrypoint.sh /evolution/entrypoint.sh
+RUN chmod +x /evolution/entrypoint.sh
 
-
-# Nota: As variáveis de ambiente da Evolution API, como DATABASE_CONNECTION_URI,
+ENTRYPOINT ["/evolution/entrypoint.sh"]
 # AUTHENTICATION_API_KEY, entre outras, devem ser definidas via fly secrets ou docker-compose.
